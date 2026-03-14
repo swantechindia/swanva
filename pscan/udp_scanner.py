@@ -1,10 +1,10 @@
-"""UDP scanning support for SwanScan."""
+"""UDP scanning support for pscan."""
 
 from __future__ import annotations
 
 import logging
 
-from swanscan.utils import ScanState, resolve_target
+from pscan.utils import ScanState, resolve_target
 
 LOGGER = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-"""Core scanning engine for SwanScan."""
+"""Core scanning engine for pscan."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, Literal, TypedDict
 
-from swanscan.service_detection import ServiceInfo, detect_service
-from swanscan.syn_scanner import scan_syn_port
-from swanscan.tcp_scanner import scan_port
-from swanscan.udp_scanner import scan_udp_port
-from swanscan.utils import ScanState, chunked, parse_ports
+from pscan.service_detection import ServiceInfo, detect_service
+from pscan.syn_scanner import scan_syn_port
+from pscan.tcp_scanner import scan_port
+from pscan.udp_scanner import scan_udp_port
+from pscan.utils import ScanState, chunked, parse_ports
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_BATCH_MULTIPLIER = 4

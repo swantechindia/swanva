@@ -1,4 +1,4 @@
-"""Service detection and banner grabbing for SwanScan."""
+"""Service detection and banner grabbing for pscan."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import re
 import socket
 from typing import TypedDict
 
-from swanscan.utils import guess_service_name
+from pscan.utils import guess_service_name
 
 HTTP_PORTS = {80, 81, 443, 591, 8000, 8008, 8080, 8081, 8443, 8888}
 
@@ -64,7 +64,7 @@ def _build_http_probe(target: str) -> bytes:
     """Build a small HTTP probe request."""
 
     return (
-        f"HEAD / HTTP/1.0\r\nHost: {target}\r\nUser-Agent: SwanScan/2.0\r\n\r\n".encode("ascii")
+        f"HEAD / HTTP/1.0\r\nHost: {target}\r\nUser-Agent: pscan/2.0\r\n\r\n".encode("ascii")
     )
 
 
@@ -72,7 +72,7 @@ def _build_generic_probe(service: str) -> bytes:
     """Build a lightweight text probe for unknown services."""
 
     if service == "smtp":
-        return b"EHLO swanscan.local\r\n"
+        return b"EHLO pscan.local\r\n"
     if service == "ftp":
         return b"HELP\r\n"
     return b"\r\n"

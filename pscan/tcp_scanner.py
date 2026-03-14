@@ -1,4 +1,4 @@
-"""TCP scanning primitives for SwanScan."""
+"""TCP scanning primitives for pscan."""
 
 from __future__ import annotations
 

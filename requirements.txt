@@ -1,1 +1,2 @@
-scapy
+# Runtime dependency management is defined in pyproject.toml.
+# This file is optional and is not required for installation.

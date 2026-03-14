@@ -1,4 +1,4 @@
-"""Utility helpers for SwanScan."""
+"""Utility helpers for pscan."""
 
 from __future__ import annotations
 

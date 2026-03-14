@@ -1,14 +1,13 @@
-"""Command-line entrypoint for SwanScan."""
+"""Command-line entrypoint for pscan."""
 
 from __future__ import annotations
 
 import argparse
 import logging
 import sys
-from typing import Sequence
 
-from swanscan.engine import ScannerEngine
-from swanscan.utils import guess_service_name
+from pscan.engine import ScannerEngine
+from pscan.utils import guess_service_name
 
 DEFAULT_PORTS = "1-1000"
 DEFAULT_THREADS = 100
@@ -16,9 +15,9 @@ DEFAULT_TIMEOUT = 1.0
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the SwanScan CLI argument parser."""
+    """Create the pscan CLI argument parser."""
 
-    parser = argparse.ArgumentParser(description="SwanScan advanced network scanner")
+    parser = argparse.ArgumentParser(description="pscan advanced network scanner")
     parser.add_argument(
         "-t",
         "--target",
@@ -120,11 +119,11 @@ def determine_scan_type(args: argparse.Namespace) -> str:
     return "tcp_connect"
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    """Run the SwanScan CLI."""
+def main() -> int:
+    """Run the pscan CLI."""
 
     parser = build_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args()
     configure_logging(args.log_level)
 
     try:
