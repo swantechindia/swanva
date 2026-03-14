@@ -7,6 +7,9 @@ name = "web_scanner"
 version = "0.1.0"
 description = "Web scanner module for SwanVA"
 requires-python = ">=3.9"
+dependencies = [
+    "pydantic>=2"
+]
 
 [tool.setuptools.packages.find]
 include = ["web_scanner*"]
