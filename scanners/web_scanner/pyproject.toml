@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "web_scanner"
+version = "0.1.0"
+description = "Web scanner module for SwanVA"
+requires-python = ">=3.9"
+
+[tool.setuptools.packages.find]
+include = ["web_scanner*"]

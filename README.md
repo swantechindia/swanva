@@ -1,6 +1,21 @@
-# pscan
+# SwanVA
 
-pscan is a Python-based port scanner for TCP connect, SYN stealth, and UDP reconnaissance. It provides a simple CLI, concurrent scanning, structured scan results inside the engine, and optional service/version detection for open TCP ports.
+SwanVA is a Python scanner monorepo. Each scanner lives in its own installable package under `scanners/`.
+
+## Architecture
+
+- `scanners/`: independently installable scanner packages
+- `va_manager/`: shared orchestration layer for coordinating scanner execution
+
+Current packages:
+
+- `scanners/pscan`: network port scanner with TCP connect, SYN, UDP, and service detection
+- `scanners/os_scanner`: placeholder package for future OS detection work
+- `scanners/web_scanner`: placeholder package for future web scanning work
+- `scanners/db_scanner`: placeholder package for future database scanning work
+- `va_manager`: central management module for future scanner orchestration
+
+The `pscan` package remains a Python-based port scanner for TCP connect, SYN stealth, and UDP reconnaissance. It provides a simple CLI, concurrent scanning, structured scan results inside the engine, and optional service/version detection for open TCP ports.
 
 ## Features
 
@@ -23,7 +38,7 @@ SYN and UDP scans often require `sudo` or root privileges because they rely on r
 
 ## Installation
 
-Clone or copy the project to your system, then install it into a virtual environment.
+Clone or copy the project to your system, then install the scanner package you want.
 
 ```bash
 git clone <your-repo-url>
@@ -31,12 +46,13 @@ cd swanva
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
+cd scanners/pscan
 pip install .
 ```
 
-This installs the package and creates the `pscan` command.
+This installs the `pscan` package and creates the `pscan` command.
 
-Package metadata is defined in [`pyproject.toml`](/root/swanva/pyproject.toml). The internal Python package and installed CLI command are both `pscan`.
+Package metadata for the port scanner is defined in [scanners/pscan/pyproject.toml](/root/swanva/scanners/pscan/pyproject.toml).
 
 Main runtime dependency:
 

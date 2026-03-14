@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pscan"
+version = "0.1.0"
+description = "Network port scanner with TCP, SYN, UDP and service detection"
+requires-python = ">=3.9"
+dependencies = [
+    "scapy"
+]
+
+[project.scripts]
+pscan = "pscan.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["pscan*"]
