@@ -3,10 +3,17 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "os_scanner"
+name = "swan-os-scanner"
 version = "0.1.0"
-description = "OS detection scanner module for SwanVA"
+description = "Swan OS credential scanner"
+authors = [{name = "Swan"}]
 requires-python = ">=3.9"
+dependencies = [
+    "paramiko"
+]
+
+[project.scripts]
+swan-os-scanner = "os_scanner.scanner:main"
 
 [tool.setuptools.packages.find]
 include = ["os_scanner*"]
