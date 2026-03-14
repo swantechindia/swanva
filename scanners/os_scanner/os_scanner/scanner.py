@@ -7,10 +7,15 @@ import json
 import sys
 
 from os_scanner.collectors import (
+    collect_cron,
     collect_kernel,
+    collect_network,
     collect_os_info,
     collect_packages,
+    collect_permissions,
     collect_services,
+    collect_software,
+    collect_sudo,
     collect_users,
 )
 from os_scanner.ssh import connect
@@ -31,6 +36,11 @@ def scan_host(host: str, username: str, password: str) -> dict[str, object]:
                 "packages": collect_packages(ssh),
                 "services": collect_services(ssh),
                 "users": collect_users(ssh),
+                "sudo": collect_sudo(ssh),
+                "software": collect_software(ssh),
+                "network": collect_network(ssh),
+                "cron": collect_cron(ssh),
+                "permissions": collect_permissions(ssh),
             },
         }
     finally:
