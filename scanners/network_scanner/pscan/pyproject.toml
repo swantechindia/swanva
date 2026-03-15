@@ -14,5 +14,8 @@ dependencies = [
 [project.scripts]
 pscan = "pscan.cli:main"
 
-[tool.setuptools.packages.find]
-include = ["pscan*"]
+[tool.setuptools]
+packages = ["pscan"]
+
+[tool.setuptools.package-dir]
+pscan = "."

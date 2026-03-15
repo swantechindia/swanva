@@ -5,7 +5,7 @@
 ## Package
 
 - Package root: [scanners/network_scanner/pscan](/root/swanva/scanners/network_scanner/pscan)
-- Python package: [scanners/network_scanner/pscan/pscan](/root/swanva/scanners/network_scanner/pscan/pscan)
+- Python package: [scanners/network_scanner/pscan](/root/swanva/scanners/network_scanner/pscan)
 - Entry point: `pscan`
 - Metadata: [scanners/network_scanner/pscan/pyproject.toml](/root/swanva/scanners/network_scanner/pscan/pyproject.toml#L1)
 
@@ -36,12 +36,12 @@ pscan -t 192.168.1.10 -sS -sV
 
 ## Important Files
 
-- [scanners/network_scanner/pscan/pscan/cli.py](/root/swanva/scanners/network_scanner/pscan/pscan/cli.py#L1): CLI entrypoint
-- [scanners/network_scanner/pscan/pscan/engine.py](/root/swanva/scanners/network_scanner/pscan/pscan/engine.py#L1): scan orchestration
-- [scanners/network_scanner/pscan/pscan/tcp_scanner.py](/root/swanva/scanners/network_scanner/pscan/pscan/tcp_scanner.py#L1): TCP connect logic
-- [scanners/network_scanner/pscan/pscan/syn_scanner.py](/root/swanva/scanners/network_scanner/pscan/pscan/syn_scanner.py#L1): SYN scan logic
-- [scanners/network_scanner/pscan/pscan/udp_scanner.py](/root/swanva/scanners/network_scanner/pscan/pscan/udp_scanner.py#L1): UDP scan logic
-- [scanners/network_scanner/pscan/pscan/service_detection.py](/root/swanva/scanners/network_scanner/pscan/pscan/service_detection.py#L1): banner detection
+- [scanners/network_scanner/pscan/cli.py](/root/swanva/scanners/network_scanner/pscan/cli.py#L1): CLI entrypoint
+- [scanners/network_scanner/pscan/engine.py](/root/swanva/scanners/network_scanner/pscan/engine.py#L1): scan orchestration
+- [scanners/network_scanner/pscan/tcp_scanner.py](/root/swanva/scanners/network_scanner/pscan/tcp_scanner.py#L1): TCP connect logic
+- [scanners/network_scanner/pscan/syn_scanner.py](/root/swanva/scanners/network_scanner/pscan/syn_scanner.py#L1): SYN scan logic
+- [scanners/network_scanner/pscan/udp_scanner.py](/root/swanva/scanners/network_scanner/pscan/udp_scanner.py#L1): UDP scan logic
+- [scanners/network_scanner/pscan/service_detection.py](/root/swanva/scanners/network_scanner/pscan/service_detection.py#L1): banner detection
 
 ## Notes
 
