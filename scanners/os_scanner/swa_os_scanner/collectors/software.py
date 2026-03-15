@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from os_scanner.ssh import run_command
+from swa_os_scanner.ssh import run_command
 
 SOFTWARE_COMMANDS = {
     "docker": ("docker", "docker --version"),

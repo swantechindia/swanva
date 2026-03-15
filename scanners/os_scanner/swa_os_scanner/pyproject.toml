@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "swa-os-scanner"
+name = "swan-os-scanner"
 version = "0.1.0"
 description = "Swan OS credential scanner"
 authors = [{name = "Swan"}]
@@ -13,7 +13,12 @@ dependencies = [
 ]
 
 [project.scripts]
-swan-os-scanner = "os_scanner.scanner:main"
+swan-os-scanner = "swa_os_scanner.scanner:main"
 
-[tool.setuptools.packages.find]
-include = ["os_scanner*"]
+[tool.setuptools]
+packages = ["swa_os_scanner", "swa_os_scanner.collectors", "swa_os_scanner.parsers"]
+
+[tool.setuptools.package-dir]
+swa_os_scanner = "."
+"swa_os_scanner.collectors" = "collectors"
+"swa_os_scanner.parsers" = "parsers"

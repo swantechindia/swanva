@@ -5,7 +5,7 @@
 ## Package
 
 - Package root: [scanners/os_scanner/swa_os_scanner](/root/swanva/scanners/os_scanner/swa_os_scanner)
-- Python package: [scanners/os_scanner/swa_os_scanner/os_scanner](/root/swanva/scanners/os_scanner/swa_os_scanner/os_scanner)
+- Python package: [scanners/os_scanner/swa_os_scanner](/root/swanva/scanners/os_scanner/swa_os_scanner)
 - Entry point: `swan-os-scanner`
 - Metadata: [scanners/os_scanner/swa_os_scanner/pyproject.toml](/root/swanva/scanners/os_scanner/swa_os_scanner/pyproject.toml#L1)
 
@@ -39,7 +39,7 @@ pip install .
 
 ```bash
 swan-os-scanner --host 192.168.1.25 --username root --password password
-python -m os_scanner.scanner --host 192.168.1.25 --username root --password password
+python -m swa_os_scanner.scanner --host 192.168.1.25 --username root --password password
 ```
 
 ## Output
@@ -67,11 +67,11 @@ The scanner returns structured JSON shaped like:
 
 ## Important Files
 
-- [scanners/os_scanner/swa_os_scanner/os_scanner/scanner.py](/root/swanva/scanners/os_scanner/swa_os_scanner/os_scanner/scanner.py#L1): collector orchestration and CLI
-- [scanners/os_scanner/swa_os_scanner/os_scanner/ssh.py](/root/swanva/scanners/os_scanner/swa_os_scanner/os_scanner/ssh.py#L1): SSH transport layer
-- [scanners/os_scanner/swa_os_scanner/os_scanner/system_detector.py](/root/swanva/scanners/os_scanner/swa_os_scanner/os_scanner/system_detector.py#L1): OS detection
-- [scanners/os_scanner/swa_os_scanner/os_scanner/collectors](/root/swanva/scanners/os_scanner/swa_os_scanner/os_scanner/collectors): modular collectors
-- [scanners/os_scanner/swa_os_scanner/os_scanner/parsers](/root/swanva/scanners/os_scanner/swa_os_scanner/os_scanner/parsers): package output parsers
+- [scanners/os_scanner/swa_os_scanner/scanner.py](/root/swanva/scanners/os_scanner/swa_os_scanner/scanner.py#L1): collector orchestration and CLI
+- [scanners/os_scanner/swa_os_scanner/ssh.py](/root/swanva/scanners/os_scanner/swa_os_scanner/ssh.py#L1): SSH transport layer
+- [scanners/os_scanner/swa_os_scanner/system_detector.py](/root/swanva/scanners/os_scanner/swa_os_scanner/system_detector.py#L1): OS detection
+- [scanners/os_scanner/swa_os_scanner/collectors](/root/swanva/scanners/os_scanner/swa_os_scanner/collectors): modular collectors
+- [scanners/os_scanner/swa_os_scanner/parsers](/root/swanva/scanners/os_scanner/swa_os_scanner/parsers): package output parsers
 
 ## Notes
 

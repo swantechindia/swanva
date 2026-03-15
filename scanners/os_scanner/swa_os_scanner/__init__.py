@@ -10,6 +10,6 @@ __all__ = ["scan_host"]
 def scan_host(*args: Any, **kwargs: Any):
     """Lazily dispatch to the scanner entrypoint."""
 
-    from os_scanner.scanner import scan_host as _scan_host
+    from swa_os_scanner.scanner import scan_host as _scan_host
 
     return _scan_host(*args, **kwargs)

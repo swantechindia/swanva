@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from os_scanner.parsers.dpkg_parser import parse_dpkg_output
-from os_scanner.parsers.rpm_parser import parse_rpm_output
-from os_scanner.ssh import run_command
+from swa_os_scanner.parsers.dpkg_parser import parse_dpkg_output
+from swa_os_scanner.parsers.rpm_parser import parse_rpm_output
+from swa_os_scanner.ssh import run_command
 
 
 def collect_packages(ssh) -> list[dict[str, str]]:

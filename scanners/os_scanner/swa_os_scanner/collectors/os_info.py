@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from os_scanner.system_detector import detect_os
+from swa_os_scanner.system_detector import detect_os
 
 
 def collect_os_info(ssh) -> dict[str, str]:
