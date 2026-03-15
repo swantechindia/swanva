@@ -6,7 +6,7 @@ import argparse
 import json
 import sys
 
-from swa_os_scanner.collectors import (
+from swan_os_scanner.collectors import (
     collect_cron,
     collect_kernel,
     collect_network,
@@ -18,7 +18,7 @@ from swa_os_scanner.collectors import (
     collect_sudo,
     collect_users,
 )
-from swa_os_scanner.ssh import connect
+from swan_os_scanner.ssh import connect
 
 
 def scan_host(host: str, username: str, password: str) -> dict[str, object]:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from swa_os_scanner.ssh import run_command
+from swan_os_scanner.ssh import run_command
 
 
 def collect_sudo(ssh) -> dict[str, object]:

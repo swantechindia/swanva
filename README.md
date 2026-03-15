@@ -10,7 +10,7 @@ swanva/
 │   ├── network_scanner/
 │   │   └── pscan/
 │   ├── os_scanner/
-│   │   └── swa_os_scanner/
+│   │   └── swan_os_scanner/
 │   ├── web_scanner/
 │   └── db_scanner/
 ├── va_manager/
@@ -22,7 +22,7 @@ swanva/
 ## Packages
 
 - [scanners/network_scanner/pscan/README.md](/root/swanva/scanners/network_scanner/pscan/README.md): TCP connect, SYN, UDP, and service detection scanner
-- [scanners/os_scanner/swa_os_scanner/README.md](/root/swanva/scanners/os_scanner/swa_os_scanner/README.md): SSH-based Linux system inventory collector
+- [scanners/os_scanner/swan_os_scanner/README.md](/root/swanva/scanners/os_scanner/swan_os_scanner/README.md): SSH-based Linux system inventory collector
 - [scanners/web_scanner/README.md](/root/swanva/scanners/web_scanner/README.md): plugin-based web scanning engine for Nikto and Nuclei
 - [scanners/db_scanner/README.md](/root/swanva/scanners/db_scanner/README.md): placeholder package for future database scanning features
 - [va_manager/manager.py](/root/swanva/va_manager/manager.py#L1): central manager skeleton for scanner orchestration

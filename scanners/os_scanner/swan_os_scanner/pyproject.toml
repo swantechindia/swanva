@@ -13,12 +13,12 @@ dependencies = [
 ]
 
 [project.scripts]
-swan-os-scanner = "swa_os_scanner.scanner:main"
+swan-os-scanner = "swan_os_scanner.scanner:main"
 
 [tool.setuptools]
-packages = ["swa_os_scanner", "swa_os_scanner.collectors", "swa_os_scanner.parsers"]
+packages = ["swan_os_scanner", "swan_os_scanner.collectors", "swan_os_scanner.parsers"]
 
 [tool.setuptools.package-dir]
-swa_os_scanner = "."
-"swa_os_scanner.collectors" = "collectors"
-"swa_os_scanner.parsers" = "parsers"
+swan_os_scanner = "."
+"swan_os_scanner.collectors" = "collectors"
+"swan_os_scanner.parsers" = "parsers"
