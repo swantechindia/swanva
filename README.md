@@ -7,7 +7,8 @@ SwanVA is a Python scanner monorepo. Each scanner lives in its own installable p
 ```text
 swanva/
 ├── scanners/
-│   ├── pscan/
+│   ├── network_scanner/
+│   │   └── pscan/
 │   ├── os_scanner/
 │   ├── web_scanner/
 │   └── db_scanner/
@@ -19,7 +20,7 @@ swanva/
 
 ## Packages
 
-- [scanners/pscan/README.md](/root/swanva/scanners/pscan/README.md): TCP connect, SYN, UDP, and service detection scanner
+- [scanners/network_scanner/pscan/README.md](/root/swanva/scanners/network_scanner/pscan/README.md): TCP connect, SYN, UDP, and service detection scanner
 - [scanners/os_scanner/README.md](/root/swanva/scanners/os_scanner/README.md): SSH-based Linux system inventory collector
 - [scanners/web_scanner/README.md](/root/swanva/scanners/web_scanner/README.md): plugin-based web scanning engine for Nikto and Nuclei
 - [scanners/db_scanner/README.md](/root/swanva/scanners/db_scanner/README.md): placeholder package for future database scanning features
@@ -35,11 +36,11 @@ cd swanva
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
-cd scanners/pscan
+cd scanners/network_scanner/pscan
 pip install .
 ```
 
-Swap `scanners/pscan` for another scanner package when needed.
+Swap `scanners/network_scanner/pscan` for another scanner package when needed.
 
 ## Notes
 
