@@ -14,6 +14,7 @@ from va_manager.models.asset import Asset
 from va_manager.models.scan_job import ScanJob
 from va_manager.models.scan_result import ScanResult
 from va_manager.queue.job_queue import get_next_job
+from va_manager.services.report_service import generate_report
 from va_manager.vuln_data_service.service import vulnerability_data_service
 from va_manager.vulnerability_engine.service import analyze_scan_results
 
@@ -136,8 +137,11 @@ def process_next_job(session_factory: Callable[[], Session]) -> bool:
             try:
                 with completion_db.begin():
                     job = completion_db.get(ScanJob, job_id)
+                    asset = completion_db.get(Asset, asset_id)
                     if job is None:
                         raise ValueError(f"Job {job_id} could not be reloaded for analysis completion.")
+                    if asset is None:
+                        raise ValueError(f"Asset {asset_id} could not be reloaded for analysis completion.")
 
                     job.status = "analysis_completed"
                     job.stage = "analysis_completed"
@@ -149,6 +153,16 @@ def process_next_job(session_factory: Callable[[], Session]) -> bool:
                             scanner="vulnerability_engine",
                             result_json=vulnerability_report,
                         )
+                    )
+
+                    # Generate structured report from vulnerability findings
+                    findings = vulnerability_report.get("vulnerabilities", [])
+                    generate_report(
+                        completion_db,
+                        job_id,
+                        asset_id,
+                        asset.name,
+                        findings,
                     )
             finally:
                 completion_db.close()

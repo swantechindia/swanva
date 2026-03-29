@@ -41,6 +41,7 @@ class ScanJob(Base):
 
     asset = relationship("Asset", back_populates="scan_jobs")
     scan_results = relationship("ScanResult", back_populates="scan_job", cascade="all, delete-orphan")
+    report = relationship("Report", back_populates="scan_job", uselist=False, cascade="all, delete-orphan")
 
     @property
     def finished_at(self) -> datetime | None:
