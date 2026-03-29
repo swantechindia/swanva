@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
+from urllib.parse import urlparse
 
-from va_manager.models.asset import Asset
 from va_manager.models.scan_job import ScanJob
-from va_manager.security.secrets import secret_manager
+from va_manager.services.asset_service import AssetExecutionView
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 NETWORK_SCANNER_PARENT = PROJECT_ROOT / "scanners" / "network_scanner"
@@ -24,7 +24,7 @@ from swan_os_scanner.scanner import scan_host  # noqa: E402
 from scanners.web_scanner.web_scanner.scanner import start_scan as start_web_scan  # noqa: E402
 
 
-def execute(job: ScanJob, asset: Asset) -> dict[str, Any]:
+def execute(job: ScanJob, asset: AssetExecutionView) -> dict[str, Any]:
     """Dispatch a queued job to the requested scanner implementation."""
 
     if job.scanner_type == "network":
@@ -42,12 +42,12 @@ def execute(job: ScanJob, asset: Asset) -> dict[str, Any]:
     raise ValueError(f"Unsupported scanner type: {job.scanner_type}")
 
 
-def _run_network_scan(asset: Asset, config: dict[str, Any]) -> dict[str, Any]:
+def _run_network_scan(asset: AssetExecutionView, config: Mapping[str, object]) -> dict[str, Any]:
     """Execute the port scanner using the existing scanner engine."""
 
     scan_type = _resolve_network_scan_type(config)
     engine = ScannerEngine(
-        target=asset.target,
+        target=_resolve_network_target(asset),
         ports=str(config.get("ports", "1-1000")),
         threads=int(config.get("threads", 100)),
         timeout=float(config.get("timeout", 1.0)),
@@ -57,26 +57,26 @@ def _run_network_scan(asset: Asset, config: dict[str, Any]) -> dict[str, Any]:
     return engine.run()
 
 
-def _run_os_scan(asset: Asset, config: dict[str, Any]) -> dict[str, Any]:
+def _run_os_scan(asset: AssetExecutionView, config: Mapping[str, object]) -> dict[str, Any]:
     """Execute the SSH-based OS inventory scanner.
 
-    Stored credentials are decrypted only inside this execution path and are
-    never logged. This keeps secret exposure limited to the short-lived call
-    boundary where the scanner actually needs the plaintext password.
+    Credentials are decrypted only in the short-lived execution asset view
+    returned by the asset service.
     """
 
-    username = str(config.get("username") or asset.username or "")
-    password = _resolve_os_password(asset, config)
+    credentials = _get_credentials(asset)
+    username = str(credentials.get("username") or "").strip()
+    password = str(credentials.get("password") or "").strip()
     if not username or not password:
-        raise ValueError("OS scan requires SSH credentials on the asset or in the job config.")
+        raise ValueError("OS scan requires endpoint credentials on the asset.")
 
-    return scan_host(asset.target, username, password)
+    return scan_host(str(asset.config.get("ip") or asset.target), username, password)
 
 
-def _run_web_scan(asset: Asset, config: dict[str, Any]) -> dict[str, Any]:
+def _run_web_scan(asset: AssetExecutionView, config: Mapping[str, object]) -> dict[str, Any]:
     """Execute the web scanner for HTTP or HTTPS assets."""
 
-    target = _build_web_target(asset)
+    target = _build_web_target(asset, config)
     tools = config.get("tools")
     if tools is not None and not isinstance(tools, list):
         raise ValueError("Web scan config 'tools' must be a list when provided.")
@@ -84,7 +84,7 @@ def _run_web_scan(asset: Asset, config: dict[str, Any]) -> dict[str, Any]:
     return start_web_scan(target, tools)
 
 
-def _resolve_network_scan_type(config: dict[str, Any]) -> str:
+def _resolve_network_scan_type(config: Mapping[str, object]) -> str:
     """Normalize network scan config into the engine's scan type set."""
 
     scan_type = str(config.get("scan_type", "tcp_connect")).strip().lower()
@@ -97,24 +97,37 @@ def _resolve_network_scan_type(config: dict[str, Any]) -> str:
     return "tcp_connect"
 
 
-def _build_web_target(asset: Asset) -> str:
+def _build_web_target(asset: AssetExecutionView, config: Mapping[str, object]) -> str:
     """Construct a web target URL from asset metadata."""
 
-    protocol = (asset.protocol or "http").strip(":/")
-    if asset.port:
-        return f"{protocol}://{asset.target}:{asset.port}"
-    return f"{protocol}://{asset.target}"
+    stored_url = str(asset.config.get("url") or asset.target).strip()
+    parsed_target = urlparse(stored_url)
+    if parsed_target.scheme and parsed_target.netloc:
+        return stored_url
+
+    scheme = str(config.get("scheme") or "https").strip(":/")
+    port = config.get("port")
+    if port is not None:
+        return f"{scheme}://{asset.target}:{int(port)}"
+    return f"{scheme}://{asset.target}"
 
 
-def _resolve_os_password(asset: Asset, config: dict[str, Any]) -> str:
-    """Resolve scanner credentials, decrypting stored secrets only when needed."""
+def _resolve_network_target(asset: AssetExecutionView) -> str:
+    """Resolve the host/IP that the network scanner should probe."""
 
-    config_password = config.get("password")
-    if config_password not in (None, ""):
-        return str(config_password)
+    if asset.asset_type.value in {"endpoint", "database"}:
+        return str(asset.config.get("ip") or asset.target)
 
-    stored_password = str(asset.password or "")
-    if not stored_password:
-        return ""
+    parsed = urlparse(str(asset.config.get("url") or asset.target))
+    if parsed.hostname:
+        return parsed.hostname
+    return asset.target
 
-    return secret_manager.decrypt(stored_password)
+
+def _get_credentials(asset: AssetExecutionView) -> Mapping[str, object]:
+    """Return credential material from the decrypted execution view."""
+
+    credentials = asset.config.get("credentials")
+    if isinstance(credentials, Mapping):
+        return credentials
+    return {}

@@ -3,23 +3,27 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
-
 from sqlalchemy.orm import Session
 
 from va_manager.models.scan_job import ScanJob
-from va_manager.services.scan_service import create_scan_job
+from va_manager.services.scan_service import create_scan_job, delete_scan_job
 
 
 def start_scan(
     db: Session,
     asset_id: int,
     scanner_type: str,
-    config: dict[str, Any] | None = None,
+    config: dict[str, object] | None = None,
 ) -> ScanJob:
     """Queue a scan job for an existing asset."""
 
     return create_scan_job(db, asset_id, scanner_type, config or {})
+
+
+def remove_scan(db: Session, job_id: int) -> bool:
+    """Delete a queued or completed scan job."""
+
+    return delete_scan_job(db, job_id)
 
 
 def get_scan_status(db: Session, job_id: int) -> dict[str, object] | None:
@@ -55,7 +59,7 @@ class VAManager:
         self,
         asset_id: int,
         scanner_type: str,
-        config: dict[str, Any] | None = None,
+        config: dict[str, object] | None = None,
     ) -> ScanJob:
         """Queue a scan for a specific asset."""
 
@@ -65,3 +69,8 @@ class VAManager:
         """Return the database state for a queued or completed job."""
 
         return get_scan_status(self.db, job_id)
+
+    def remove_scan(self, job_id: int) -> bool:
+        """Delete a queued or completed scan job."""
+
+        return remove_scan(self.db, job_id)

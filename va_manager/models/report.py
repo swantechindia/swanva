@@ -22,7 +22,7 @@ class Report(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    scan_job_id: Mapped[int] = mapped_column(ForeignKey("scan_jobs.id"), nullable=False, index=True)
+    scan_job_id: Mapped[int] = mapped_column(ForeignKey("scan_jobs.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     total_vulnerabilities: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     severity_counts: Mapped[dict[str, int]] = mapped_column(

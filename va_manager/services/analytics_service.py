@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import logging
 from datetime import datetime, timedelta
-from typing import Any
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -13,14 +11,11 @@ from va_manager.models.asset import Asset
 from va_manager.models.report import Report
 from va_manager.models.vulnerability import Vulnerability
 
-LOGGER = logging.getLogger(__name__)
-
-
 def get_top_assets(
     db: Session,
     limit: int = 10,
     days: int = 30,
-) -> list[dict[str, Any]]:
+) -> list[dict[str, object]]:
     """Get assets with the most vulnerabilities in the past N days.
 
     Args:
@@ -37,7 +32,7 @@ def get_top_assets(
     query = (
         db.query(
             Asset.id,
-            Asset.name,
+            Asset.target,
             func.count(Vulnerability.id).label("vulnerability_count"),
             func.count(
                 func.distinct(Vulnerability.cve)
@@ -46,7 +41,7 @@ def get_top_assets(
         .join(Vulnerability, Vulnerability.asset_id == Asset.id)
         .join(Report, Report.id == Vulnerability.report_id)
         .filter(Report.created_at >= since)
-        .group_by(Asset.id, Asset.name)
+        .group_by(Asset.id, Asset.target)
         .order_by(func.count(func.distinct(Vulnerability.cve)).desc())
         .limit(limit)
     )
@@ -69,7 +64,7 @@ def get_top_cves(
     db: Session,
     limit: int = 20,
     days: int = 30,
-) -> list[dict[str, Any]]:
+) -> list[dict[str, object]]:
     """Get most frequently discovered CVEs in the past N days.
 
     Args:
@@ -151,7 +146,7 @@ def get_severity_distribution(
 def get_vulnerability_trends(
     db: Session,
     days: int = 30,
-) -> list[dict[str, Any]]:
+) -> list[dict[str, object]]:
     """Get vulnerability discovery trends over time (daily aggregation).
 
     Args:
@@ -204,7 +199,7 @@ def get_vulnerability_trends(
 def get_cve_details(
     db: Session,
     cve: str,
-) -> dict[str, Any] | None:
+) -> dict[str, object] | None:
     """Get detailed information about a specific CVE across all assets.
 
     Args:
@@ -223,14 +218,14 @@ def get_cve_details(
     affected_query = (
         db.query(
             Asset.id,
-            Asset.name,
+            Asset.target,
             Vulnerability.affected_ports,
         )
         .join(Vulnerability, Vulnerability.asset_id == Asset.id)
         .filter(Vulnerability.cve == cve)
     )
 
-    affected_assets_dict: dict[int, dict[str, Any]] = {}
+    affected_assets_dict: dict[int, dict[str, object]] = {}
     for asset_id, asset_name, ports in affected_query:
         if asset_id not in affected_assets_dict:
             affected_assets_dict[asset_id] = {
@@ -269,7 +264,7 @@ def get_asset_details(
     db: Session,
     asset_id: int,
     days: int = 90,
-) -> dict[str, Any] | None:
+) -> dict[str, object] | None:
     """Get detailed vulnerability information for a specific asset.
 
     Args:
@@ -316,7 +311,7 @@ def get_asset_details(
 
     return {
         "asset_id": asset.id,
-        "asset_name": asset.name,
+        "asset_name": asset.target,
         "severity_counts": severity_counts,
         "total_vulnerabilities": sum(severity_counts.values()),
         "vulnerabilities_by_severity": vulns_by_severity,

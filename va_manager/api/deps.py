@@ -1,17 +1,14 @@
-"""Shared FastAPI dependencies for database access and auth."""
+"""Shared FastAPI dependencies for database access."""
 
 from __future__ import annotations
 
 from collections.abc import Generator
 from functools import lru_cache
-from typing import Any
 
-from fastapi import Depends, Header, HTTPException, status
-from jose import JWTError, jwt
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from va_manager.config import DATABASE_URL, JWT_ALGORITHM, SECRET_KEY
+from va_manager.config import DATABASE_URL
 
 
 @lru_cache(maxsize=1)
@@ -41,32 +38,3 @@ def get_db() -> Generator[Session, None, None]:
         yield session
     finally:
         session.close()
-
-
-def get_current_user(authorization: str = Header(..., alias="Authorization")) -> dict[str, Any]:
-    """Validate a SwanCore-issued bearer token and return its claims."""
-
-    scheme, _, token = authorization.partition(" ")
-    if scheme.lower() != "bearer" or not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization header.",
-        )
-
-    if not SECRET_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server authentication configuration is missing.",
-        )
-
-    try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
-    except JWTError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token.",
-        ) from exc
-
-
-CurrentUser = Depends(get_current_user)
-DatabaseSession = Depends(get_db)

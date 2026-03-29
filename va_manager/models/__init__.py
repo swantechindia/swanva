@@ -15,17 +15,18 @@ from va_manager.models.scan_job import ScanJob  # noqa: E402
 from va_manager.models.scan_result import ScanResult  # noqa: E402
 from va_manager.models.vulnerability import Vulnerability  # noqa: E402
 from va_manager.vulnerability_engine.database.models import (  # noqa: E402
+    CatalogVulnerability,
     CPEEntry,
     CPEDictionaryEntry,
     CVSSScore,
     FeedMetadata,
-    Vulnerability as EnginedVulnerability,
     VulnerabilityReference,
 )
 
 __all__ = [
     "Asset",
     "Base",
+    "CatalogVulnerability",
     "CPEEntry",
     "CPEDictionaryEntry",
     "CVSSScore",

@@ -15,7 +15,7 @@ from hashlib import sha256
 
 from cryptography.fernet import Fernet, InvalidToken
 
-from va_manager.config import SECRET_KEY
+from va_manager.config import ENCRYPTION_KEY
 
 
 class SecretManager:
@@ -28,9 +28,9 @@ class SecretManager:
     """
 
     def __init__(self, key: str | None = None) -> None:
-        configured_key = key or os.getenv("SWAN_SECRET_KEY") or SECRET_KEY
+        configured_key = key or os.getenv("SWAN_SECRET_KEY") or ENCRYPTION_KEY
         if not configured_key:
-            raise RuntimeError("SWAN_SECRET_KEY not configured")
+            raise RuntimeError("Credential encryption key is not configured.")
 
         normalized_key = self._normalize_key(configured_key)
         self.fernet = Fernet(normalized_key)
@@ -67,3 +67,15 @@ def get_secret_manager() -> SecretManager:
 
 
 secret_manager = get_secret_manager()
+
+
+def encrypt_secret(plain: str) -> str:
+    """Encrypt a secret string for database storage."""
+
+    return secret_manager.encrypt(plain)
+
+
+def decrypt_secret(encrypted: str) -> str:
+    """Decrypt a database secret into plaintext for short-lived runtime use."""
+
+    return secret_manager.decrypt(encrypted)

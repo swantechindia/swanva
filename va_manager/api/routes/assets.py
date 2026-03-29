@@ -2,100 +2,161 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+import logging
 
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from va_manager.api.deps import get_current_user, get_db
-from va_manager.models.asset import Asset
-from va_manager.security.secrets import secret_manager
+from va_manager.api.deps import get_db
+from va_manager.api.schemas.asset import (
+    AssetConnectionTestRequest,
+    AssetCreate,
+    AssetDeleteEnvelope,
+    AssetDeleteResult,
+    AssetEnvelope,
+    AssetUpdate,
+    ConnectionTestEnvelope,
+)
+from va_manager.auth.rbac import VAAccessContext, VAAdminContext
+from va_manager.services.connection_service import test_asset_connection, test_unsaved_asset_connection
+from va_manager.services.asset_service import (
+    AssetNotFoundError,
+    DuplicateAssetTargetError,
+    build_asset_response,
+    create_asset,
+    delete_asset,
+    get_asset,
+    list_assets_page,
+    update_asset,
+)
 
 router = APIRouter()
+LOGGER = logging.getLogger(__name__)
 
 
-class AssetCreateRequest(BaseModel):
-    """Payload for creating a managed asset."""
-
-    target: str
-    asset_type: str | None = None
-    protocol: str | None = None
-    port: int | None = None
-    username: str | None = None
-    password: str | None = None
-    os_type: str | None = None
-    os_version: str | None = None
-    db_type: str | None = None
-
-
-class AssetResponse(BaseModel):
-    """Serialized asset response.
-
-    Passwords are intentionally never returned. Callers only learn whether
-    stored credentials exist so the UI can indicate scan readiness without
-    exposing reusable secrets.
-    """
-
-    id: int
-    target: str
-    asset_type: str | None = None
-    protocol: str | None = None
-    port: int | None = None
-    username: str | None = None
-    credential_stored: bool
-    os_type: str | None = None
-    os_version: str | None = None
-    db_type: str | None = None
-    created_at: datetime
-    last_scanned: datetime | None = None
-
-
-@router.post("", response_model=AssetResponse)
-def create_asset(
-    payload: AssetCreateRequest,
+@router.post("", response_model=AssetEnvelope)
+def create_asset_route(
+    payload: AssetCreate,
+    _: VAAdminContext,
     db: Session = Depends(get_db),
-    _: dict[str, object] = Depends(get_current_user),
-) -> AssetResponse:
-    """Create and persist a new asset record with encrypted credentials."""
+) -> AssetEnvelope:
+    """Create a new managed asset."""
 
-    payload_data = payload.model_dump()
-    password = payload_data.pop("password", None)
-    asset = Asset(**payload_data)
-    if password:
-        asset.password = secret_manager.encrypt(password)
+    try:
+        asset = create_asset(db, payload)
+    except DuplicateAssetTargetError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
-    db.add(asset)
-    db.commit()
-    db.refresh(asset)
-    return _asset_to_response(asset)
+    return AssetEnvelope(data=build_asset_response(asset))
 
 
-@router.get("", response_model=list[AssetResponse])
-def list_assets(
+@router.get("")
+def list_assets_route(
+    _: VAAccessContext,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=500),
+    type: str | None = Query(default=None),
+    search: str | None = Query(default=None),
     db: Session = Depends(get_db),
-    _: dict[str, object] = Depends(get_current_user),
-) -> list[AssetResponse]:
-    """Return all known assets ordered by creation without exposing passwords."""
+) -> dict[str, object]:
+    """Return all managed assets."""
 
-    assets = db.query(Asset).order_by(Asset.created_at.asc(), Asset.id.asc()).all()
-    return [_asset_to_response(asset) for asset in assets]
+    payload = list_assets_page(db, page=page, limit=limit, asset_type=type, search=search)
+    return {"success": True, "data": payload}
 
 
-def _asset_to_response(asset: Asset) -> AssetResponse:
-    """Serialize asset metadata while suppressing password disclosure."""
+@router.post("/test-connection", response_model=ConnectionTestEnvelope)
+def test_unsaved_connection_route(
+    payload: AssetConnectionTestRequest,
+    _: VAAdminContext,
+) -> ConnectionTestEnvelope | JSONResponse:
+    """Test one draft asset connection without saving it."""
 
-    return AssetResponse(
-        id=asset.id,
-        target=asset.target,
-        asset_type=asset.asset_type,
-        protocol=asset.protocol,
-        port=asset.port,
-        username=asset.username,
-        credential_stored=asset.credential_stored,
-        os_type=asset.os_type,
-        os_version=asset.os_version,
-        db_type=asset.db_type,
-        created_at=asset.created_at,
-        last_scanned=asset.last_scanned,
-    )
+    try:
+        return test_unsaved_asset_connection(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except Exception:
+        LOGGER.exception("Unexpected error while testing unsaved asset connection.")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"success": False, "error": "Unexpected error while testing asset connection."},
+        )
+
+
+@router.get("/{asset_id}", response_model=AssetEnvelope)
+def get_asset_route(
+    asset_id: int,
+    _: VAAccessContext,
+    db: Session = Depends(get_db),
+) -> AssetEnvelope:
+    """Return one asset by identifier."""
+
+    try:
+        asset = get_asset(db, asset_id)
+    except AssetNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    return AssetEnvelope(data=build_asset_response(asset))
+
+
+@router.put("/{asset_id}", response_model=AssetEnvelope)
+def update_asset_route(
+    asset_id: int,
+    payload: AssetUpdate,
+    _: VAAdminContext,
+    db: Session = Depends(get_db),
+) -> AssetEnvelope:
+    """Update an existing asset."""
+
+    try:
+        asset = update_asset(db, asset_id, payload)
+    except AssetNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except DuplicateAssetTargetError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    return AssetEnvelope(data=build_asset_response(asset))
+
+
+@router.post("/{asset_id}/test-connection", response_model=ConnectionTestEnvelope)
+def test_connection_route(
+    asset_id: int,
+    _: VAAdminContext,
+    db: Session = Depends(get_db),
+) -> ConnectionTestEnvelope | JSONResponse:
+    """Test one asset connection and persist the latest health status."""
+
+    try:
+        return test_asset_connection(db, asset_id)
+    except AssetNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except Exception:
+        LOGGER.exception("Unexpected error while testing saved asset connection. asset_id=%s", asset_id)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"success": False, "error": "Unexpected error while testing asset connection."},
+        )
+
+
+@router.delete("/{asset_id}", response_model=AssetDeleteEnvelope)
+def delete_asset_route(
+    asset_id: int,
+    _: VAAdminContext,
+    db: Session = Depends(get_db),
+) -> AssetDeleteEnvelope:
+    """Delete one asset."""
+
+    try:
+        delete_asset(db, asset_id)
+    except AssetNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    return AssetDeleteEnvelope(data=AssetDeleteResult(id=asset_id))

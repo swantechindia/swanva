@@ -4,3 +4,9 @@ python-dotenv
 requests
 sqlalchemy
 pydantic
+alembic
+psycopg2-binary
+fastapi
+uvicorn
+cryptography
+paramiko

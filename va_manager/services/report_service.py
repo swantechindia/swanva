@@ -3,18 +3,29 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 from sqlalchemy.orm import Session
 
+from va_manager.models.asset import Asset
 from va_manager.models.report import Report
 from va_manager.models.scan_job import ScanJob
+from va_manager.models.scan_result import ScanResult
 from va_manager.models.vulnerability import Vulnerability
+from va_manager.services.identifiers import (
+    format_report_identifier,
+    format_scan_identifier,
+    parse_report_identifier,
+    parse_scan_identifier,
+)
 
 LOGGER = logging.getLogger(__name__)
+SeverityCounts = dict[str, int]
+AggregatedVulnerability = dict[str, object]
 
 
-def aggregate_vulnerabilities(findings: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+def aggregate_vulnerabilities(findings: list[Mapping[str, object]]) -> dict[str, AggregatedVulnerability]:
     """Aggregate vulnerability findings by CVE, grouping affected ports and services.
 
     Args:
@@ -24,7 +35,7 @@ def aggregate_vulnerabilities(findings: list[dict[str, Any]]) -> dict[str, dict[
         Dictionary keyed by CVE with aggregated vulnerability data.
     """
 
-    aggregated: dict[str, dict[str, Any]] = {}
+    aggregated: dict[str, AggregatedVulnerability] = {}
 
     for finding in findings:
         cve = finding.get("cve", "unknown")
@@ -53,7 +64,7 @@ def aggregate_vulnerabilities(findings: list[dict[str, Any]]) -> dict[str, dict[
     return aggregated
 
 
-def compute_severity_counts(findings: list[dict[str, Any]]) -> dict[str, int]:
+def compute_severity_counts(findings: list[Mapping[str, object]]) -> SeverityCounts:
     """Compute count of vulnerabilities by severity level.
 
     Args:
@@ -81,8 +92,8 @@ def compute_severity_counts(findings: list[dict[str, Any]]) -> dict[str, int]:
 def build_report_json(
     scan_id: str,
     asset: str,
-    findings: list[dict[str, Any]],
-) -> dict[str, Any]:
+    findings: list[Mapping[str, object]],
+) -> dict[str, object]:
     """Build the final structured report JSON.
 
     Args:
@@ -116,7 +127,7 @@ def generate_report(
     scan_job_id: int,
     asset_id: int,
     asset: str,
-    findings: list[dict[str, Any]],
+    findings: list[Mapping[str, object]],
 ) -> Report:
     """Generate and persist a structured vulnerability report.
 
@@ -192,7 +203,6 @@ def generate_report(
             if service and service not in vuln.affected_services:
                 vuln.affected_services.append(service)
 
-    db.commit()
     db.refresh(report)
 
     LOGGER.info(
@@ -203,3 +213,97 @@ def generate_report(
     )
 
     return report
+
+
+def generate_report_for_scan(db: Session, scan_identifier: str | int) -> Report:
+    """Generate a report for a scan if one does not already exist."""
+
+    scan_job_id = parse_scan_identifier(scan_identifier)
+    job = db.get(ScanJob, scan_job_id)
+    if job is None:
+        raise ValueError(f"Scan {scan_identifier} not found.")
+
+    existing_report = db.query(Report).filter(Report.scan_job_id == scan_job_id).one_or_none()
+    if existing_report is not None:
+        return existing_report
+
+    asset = db.get(Asset, job.asset_id)
+    if asset is None:
+        raise ValueError(f"Asset {job.asset_id} not found for scan {scan_identifier}.")
+
+    vulnerability_result = (
+        db.query(ScanResult)
+        .filter(
+            ScanResult.scan_job_id == scan_job_id,
+            ScanResult.scanner == "vulnerability_engine",
+        )
+        .order_by(ScanResult.created_at.desc(), ScanResult.id.desc())
+        .one_or_none()
+    )
+    if vulnerability_result is None:
+        raise ValueError(f"Scan {scan_identifier} does not have vulnerability analysis results.")
+
+    findings = vulnerability_result.result_json.get("vulnerabilities", [])
+    if not isinstance(findings, list):
+        raise ValueError(f"Scan {scan_identifier} returned an invalid vulnerability payload.")
+
+    report = generate_report(db, scan_job_id, asset.id, asset.name, findings)
+    db.commit()
+    db.refresh(report)
+    return report
+
+
+def list_reports(db: Session) -> list[dict[str, object]]:
+    """Return frontend-facing report metadata rows."""
+
+    reports = db.query(Report).order_by(Report.created_at.desc(), Report.id.desc()).all()
+    return [_serialize_report_metadata(report) for report in reports]
+
+
+def get_report_metadata(db: Session, report_identifier: str | int) -> dict[str, object] | None:
+    """Return one report metadata payload by report identifier."""
+
+    report = _get_report(db, report_identifier)
+    if report is None:
+        return None
+    return _serialize_report_metadata(report)
+
+
+def get_report_download_payload(db: Session, report_identifier: str | int) -> tuple[str, dict[str, Any]] | None:
+    """Return filename and JSON payload for a report download."""
+
+    report = _get_report(db, report_identifier)
+    if report is None:
+        return None
+
+    filename = f"{format_report_identifier(report.id).lower()}.json"
+    payload = {
+        "report_id": format_report_identifier(report.id),
+        "scan_id": format_scan_identifier(report.scan_job_id),
+        "created_at": report.created_at.isoformat(),
+        "status": "ready",
+        "version": report.version,
+        "report": report.report_json,
+    }
+    return filename, payload
+
+
+def _get_report(db: Session, report_identifier: str | int) -> Report | None:
+    """Resolve one report by report identifier."""
+
+    report_id = parse_report_identifier(report_identifier)
+    return db.get(Report, report_id)
+
+
+def _serialize_report_metadata(report: Report) -> dict[str, object]:
+    """Build frontend-facing report metadata."""
+
+    return {
+        "report_id": format_report_identifier(report.id),
+        "scan_id": format_scan_identifier(report.scan_job_id),
+        "created_at": report.created_at,
+        "status": "ready",
+        "total_vulnerabilities": report.total_vulnerabilities,
+        "severity_counts": report.severity_counts,
+        "version": report.version,
+    }

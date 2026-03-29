@@ -14,7 +14,9 @@ from va_manager.models.asset import Asset
 from va_manager.models.scan_job import ScanJob
 from va_manager.models.scan_result import ScanResult
 from va_manager.queue.job_queue import get_next_job
+from va_manager.services.asset_service import AssetNotFoundError
 from va_manager.services.report_service import generate_report
+from va_manager.services.scan_service import get_scan_asset
 from va_manager.vuln_data_service.service import vulnerability_data_service
 from va_manager.vulnerability_engine.service import analyze_scan_results
 
@@ -28,8 +30,6 @@ def process_next_job(session_factory: Callable[[], Session]) -> bool:
     separate phases. A completed scan must not be downgraded to `failed` just
     because the post-processing intelligence layer raises an error.
     """
-
-    _initialize_vulnerability_index(session_factory)
 
     job_id: int | None = None
     asset_id: int | None = None
@@ -81,7 +81,9 @@ def process_next_job(session_factory: Callable[[], Session]) -> bool:
         execution_db = session_factory()
         try:
             job = execution_db.get(ScanJob, job_id)
-            asset = execution_db.get(Asset, asset_id)
+            asset = None if asset_id is None else get_scan_asset(execution_db, asset_id, job.scanner_type if job else "")
+        except AssetNotFoundError:
+            asset = None
         finally:
             execution_db.close()
 
@@ -117,10 +119,8 @@ def process_next_job(session_factory: Callable[[], Session]) -> bool:
                         result_json=result,
                     )
                 )
-                completed_at = datetime.utcnow()
                 job.status = "scan_completed"
                 job.stage = "scan_completed"
-                asset.last_scanned = completed_at
         finally:
             persist_db.close()
 
@@ -161,7 +161,7 @@ def process_next_job(session_factory: Callable[[], Session]) -> bool:
                         completion_db,
                         job_id,
                         asset_id,
-                        asset.name,
+                        asset.target,
                         findings,
                     )
             finally:
